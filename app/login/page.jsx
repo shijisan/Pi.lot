@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 export default function Login() {
   const [formData, setFormData] = useState({ email: "", password: "" });
@@ -16,7 +18,14 @@ export default function Login() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(formData),
     });
-    if (res.ok) router.push("/dashboard");
+
+    if (res.ok) {
+      toast.success("Login successful!", {
+        onClose: () => router.push("/dashboard"),
+      });
+    } else {
+      toast.error("Invalid credentials. Please try again.");
+    }
   };
 
   return (
@@ -38,6 +47,7 @@ export default function Login() {
           <small>Don't have an account yet? <a className="text-blue-600 hover:text-blue-500 underline" href="/register">Sign Up</a></small>
         </div>
       </form>
+      <ToastContainer />
     </main>
   );
 }

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { verify } from "jose";
+import { jwtVerify } from "jose";
 import { parse } from "cookie";
 
 export async function middleware(req) {
@@ -9,12 +9,14 @@ export async function middleware(req) {
     const cookies = parse(req.headers.get("cookie") || "");
     const token = cookies.token;
 
+    console.log(cookies);
+
     if (!token) {
       return NextResponse.redirect(new URL("/login", req.url));
     }
 
     try {
-      await verify(token, process.env.JWT_SECRET);
+      await jwtVerify(token, new TextEncoder().encode(process.env.JWT_SECRET)); 
       return NextResponse.next();
     } catch (err) {
       return NextResponse.redirect(new URL("/login", req.url));

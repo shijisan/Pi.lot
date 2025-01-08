@@ -1,5 +1,5 @@
 import bcrypt from "bcryptjs";
-import { sign } from "jose";
+import { SignJWT } from "jose";
 import prisma from "@/app/lib/prisma";
 import { NextResponse } from "next/server";
 import { serialize } from "cookie";
@@ -12,7 +12,10 @@ export async function POST(req) {
     return NextResponse.json({ error: "Invalid credentials" }, { status: 400 });
   }
 
-  const token = sign({ sub: user.id }, process.env.JWT_SECRET, { expiresIn: "1h" });
+  const token = await new SignJWT({ sub: user.id })
+    .setProtectedHeader({ alg: "HS256" })
+    .setExpirationTime("1h")
+    .sign(new TextEncoder().encode(process.env.JWT_SECRET));
 
   const cookie = serialize("token", token, { httpOnly: true, maxAge: 60 * 60, path: "/" });
   const res = NextResponse.json({ message: "Logged in successfully" });
