@@ -1,17 +1,25 @@
 {
-  "name": "pylit",
+  "name": "pielot",
   "version": "0.1.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "postinstall": "npx prisma generate"
   },
   "dependencies": {
+    "@prisma/client": "^6.2.1",
+    "bcryptjs": "^2.4.3",
+    "cookie": "^1.0.2",
+    "jose": "^5.9.6",
+    "next": "15.1.4",
+    "prisma": "^6.2.1",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "next": "15.1.4"
+    "react-icons": "^5.4.0",
+    "react-toastify": "^11.0.2"
   },
   "devDependencies": {
     "postcss": "^8",
