@@ -8,7 +8,7 @@ const roboto = Roboto({
 })
 
 export const metadata = {
-  title: "Pylit",
+  title: "Pylot",
   description: "Made by Christian James Santos",
 };
 
