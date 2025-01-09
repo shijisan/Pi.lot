@@ -1,10 +1,10 @@
-import {Roboto} from "next/font/google";
+import {Roboto_Flex} from "next/font/google";
 import "./globals.css";
 import Nav from "./components/Nav";
 
-const roboto = Roboto({
+const roboto = Roboto_Flex({
   subsets: ["latin"],
-  weight: ["100", "300", "400", "500", "700", "900"],
+  weight: ["100", "300", "400", "500", "700"],
 })
 
 export const metadata = {

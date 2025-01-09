@@ -23,13 +23,14 @@ model Organization {
   owner         User              @relation(fields: [ownerId], references: [id], name: "UserOwnedOrgs") // Relation to User
   name          String
   users         OrganizationUser[]
+  createdAt     DateTime          @default(now())
 }
 
 model UserLabel {
   id            Int       @id @default(autoincrement())
   label         String
   createdAt     DateTime  @default(now())
-  users         OrganizationUser[]  // Added relation from UserLabel to OrganizationUser
+  users         OrganizationUser[]  
 }
 
 model OrganizationUser {
