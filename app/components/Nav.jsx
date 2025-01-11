@@ -9,7 +9,7 @@ export default function Nav() {
 
    return (
       <>
-         <nav className="fixed top-0 h-[10vh] bg-blue-600 w-full text-white flex flex-row px-4 items-center shadow">
+         <nav className="fixed top-0 h-[10vh] bg-blue-600 w-full text-white flex flex-row px-4 items-center shadow z-30">
             <div className="md:w-1/5 w-4/5 text-3xl font-semibold text-amber-400 text-center">
                <span className="inline-flex items-center">
                   PI.L<HiChartPie className="size-6" />T

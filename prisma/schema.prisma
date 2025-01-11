@@ -14,15 +14,15 @@ model User {
   password      String
   createdAt     DateTime          @default(now())
   organizations OrganizationUser[]
-  ownedOrgs     Organization[]    @relation("UserOwnedOrgs") // Added relation to owner
+  ownedOrgs     Organization[]    @relation("UserOwnedOrgs") 
 }
 
 model Organization {
   id            Int               @id @default(autoincrement())
   ownerId       Int
-  owner         User              @relation(fields: [ownerId], references: [id], name: "UserOwnedOrgs") // Relation to User
+  owner         User              @relation("UserOwnedOrgs", fields: [ownerId], references: [id]) 
   name          String
-  users         OrganizationUser[]
+  users         OrganizationUser[] 
   userCount     Int               @default(0)
   createdAt     DateTime          @default(now())
 }
@@ -31,7 +31,7 @@ model UserLabel {
   id            Int       @id @default(autoincrement())
   label         String
   createdAt     DateTime  @default(now())
-  users         OrganizationUser[]  
+  users         OrganizationUser[] 
 }
 
 model OrganizationUser {
