@@ -12,7 +12,7 @@ export async function GET(req) {
 
     const organizations = await prisma.organization.findMany({
       where: { ownerId: userId },
-      include: { users: true },
+      include: { users: true, owner: true },
     });
 
     return NextResponse.json(organizations);

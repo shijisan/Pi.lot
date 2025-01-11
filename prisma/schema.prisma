@@ -23,6 +23,7 @@ model Organization {
   owner         User              @relation(fields: [ownerId], references: [id], name: "UserOwnedOrgs") // Relation to User
   name          String
   users         OrganizationUser[]
+  userCount     Int               @default(0)
   createdAt     DateTime          @default(now())
 }
 

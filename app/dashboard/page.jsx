@@ -28,7 +28,9 @@ export default function Dashboard() {
 	}, []);
 
 	const handleCreateOrganization = async () => {
-		if (!newOrganizationName.trim()) return alert("Organization name cannot be empty.");
+		if (!newOrganizationName.trim()) {
+			return alert("Organization name cannot be empty.");
+		}
 
 		try {
 			const response = await fetch("/api/organizations/make", {
@@ -42,6 +44,7 @@ export default function Dashboard() {
 			if (response.ok) {
 				const newOrg = await response.json();
 				setOwnedOrganizations((prev) => [...prev, newOrg]);
+				setMemberOrganizations((prev) => [...prev, { organization: newOrg }]);
 				setShowCreateModal(false);
 				setNewOrganizationName("");
 			} else {
@@ -52,38 +55,30 @@ export default function Dashboard() {
 		}
 	};
 
-	const countUsers = (org) => {
-		return org.users ? org.users.length : 0;
-	};
-
 	return (
 		<main className="min-h-screen pt-[10vh] flex flex-col justify-center items-center">
 			<div className="p-4 max-w-6xl w-full rounded space-y-4">
 				<div className="min-h-[45vh] border-b border-neutral-800">
 					<h1 className="text-3xl font-medium drop-shadow-sm text-neutral-800 mb-4">Organizations Owned:</h1>
 					<ul className="grid grid-cols-4 gap-4">
-
-					<li className="p-2 flex justify-center items-center fixed bottom-4 right-4 ">
-						<button
-							className="secondary-btn px-2 inline-flex items-center justify-center rounded-lg aspect-square"
-							onClick={() => setShowCreateModal(true)}
-						>
-							<HiPlus className="size-6" />
-						</button>
-					</li>
-
+						<li className="p-2 flex justify-center items-center fixed bottom-4 right-4">
+							<button
+								className="secondary-btn px-2 inline-flex items-center justify-center rounded-lg aspect-square"
+								onClick={() => setShowCreateModal(true)}
+							>
+								<HiPlus className="size-6" />
+							</button>
+						</li>
 						{ownedOrganizations.length > 0 ? (
 							ownedOrganizations.map((org) => (
 								<li key={org.id} className="px-4 py-2 border rounded border-neutral-300 bg-neutral-200 shadow">
 									<h3 className="font-medium">{org.name}</h3>
-									<h4 className="text-sm">Users: {countUsers(org)}</h4>
+									<h4 className="text-sm">Users: {org.userCount}</h4>
 									<h4 className="text-sm">Created At: {new Date(org.createdAt).toLocaleDateString()}</h4>
 								</li>
 							))
 						) : (
-							<li className="col-span-4 text-neutral-500 text-center">
-								You don't own any organizations yet.
-							</li>
+							<li className="col-span-4 text-neutral-500 text-center">You don't own any organizations yet.</li>
 						)}
 					</ul>
 				</div>
@@ -96,7 +91,7 @@ export default function Dashboard() {
 								<li key={member.organization.id} className="p-2 border bg-neutral-200 rounded border-neutral-300 shadow">
 									<h3>{member.organization.name}</h3>
 									<h4>Created At: {new Date(member.organization.createdAt).toLocaleDateString()}</h4>
-									<h4>Users: {countUsers(member.organization)}</h4>
+									<h4>Users: {member.organization.userCount || 0}</h4>
 									<h4>Owner: {member.organization.owner.fullName}</h4>
 								</li>
 							))}
@@ -106,6 +101,7 @@ export default function Dashboard() {
 					)}
 				</div>
 			</div>
+
 			<Logout />
 
 			{showCreateModal && (
