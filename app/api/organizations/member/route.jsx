@@ -8,7 +8,6 @@ export async function GET(req) {
     const cookieStore = await cookies();
     const token = cookieStore.get("token");
 
-    // Log the token value for debugging
     console.log("Token from cookies:", token?.value);
 
     if (!token) {
@@ -21,15 +20,12 @@ export async function GET(req) {
       new TextEncoder().encode(process.env.JWT_SECRET)
     );
 
-    // Log the decoded JWT payload
     console.log("Decoded JWT payload:", payload);
 
     const userId = payload.sub;  // Accessing the 'sub' field, not 'userId'
 
-    // Log the userId extracted from the token
     console.log("User ID from token:", userId);
 
-    // Fetch organizations where the user is either the owner or a member
     const memberships = await prisma.organizationUser.findMany({
       where: {
         userId,
@@ -60,7 +56,6 @@ export async function GET(req) {
       },
     });
 
-    // Log the fetched memberships to see if the query is correct
     console.log("Fetched memberships:", memberships);
 
     return NextResponse.json(memberships);

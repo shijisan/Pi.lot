@@ -19,12 +19,11 @@ export async function GET(req) {
 
     const userId = payload.sub; // Correctly accessing 'sub' instead of 'userId'
 
-    // Find organizations where the user is either the owner or a member
     const organizations = await prisma.organization.findMany({
       where: {
         OR: [
-          { ownerId: userId }, // Owner organizations
-          { users: { some: { userId } } } // Organizations where the user is a member
+          { ownerId: userId }, 
+          { users: { some: { userId } } } 
         ]
       },
       include: {
