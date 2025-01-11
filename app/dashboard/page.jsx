@@ -1,13 +1,15 @@
 "use client";
-import { useEffect, useState } from "react";
+import { use, useEffect, useState } from "react";
 import Logout from "../components/Logout";
 import { HiPlus } from "react-icons/hi";
+import { useRouter } from "next/navigation";
 
 export default function Dashboard() {
 	const [ownedOrganizations, setOwnedOrganizations] = useState([]);
 	const [memberOrganizations, setMemberOrganizations] = useState([]);
 	const [showCreateModal, setShowCreateModal] = useState(false);
 	const [newOrganizationName, setNewOrganizationName] = useState("");
+	const router = useRouter();
 
 	useEffect(() => {
 		const fetchOrganizations = async () => {
@@ -59,7 +61,7 @@ export default function Dashboard() {
 		<main className="min-h-screen pt-[10vh] flex flex-col justify-center items-center">
 			<div className="p-4 max-w-6xl w-full rounded space-y-4">
 				<div className="min-h-[45vh] border-b border-neutral-800">
-					<h1 className="text-3xl font-medium drop-shadow-sm text-neutral-800 mb-4">Organizations Owned:</h1>
+					<h1 className="text-3xl drop-shadow-sm text-neutral-800 mb-4">Organizations Owned:</h1>
 					<ul className="grid grid-cols-4 gap-4">
 						<li className="p-2 flex justify-center items-center fixed bottom-4 right-4">
 							<button
@@ -71,8 +73,8 @@ export default function Dashboard() {
 						</li>
 						{ownedOrganizations.length > 0 ? (
 							ownedOrganizations.map((org) => (
-								<li key={org.id} className="px-4 py-2 border rounded border-neutral-300 bg-neutral-200 shadow">
-									<h3 className="font-medium">{org.name}</h3>
+								<li key={org.id} className="px-4 py-2 border rounded border-neutral-300 bg-neutral-200 shadow hover:cursor-pointer hover:scale-105 transition-all hover:bg-neutral-100 hover:border-neutral-200 hover:shadow-md active:bg-blue-100" onClick={() => router.push(`/organization/${org.id}`)} >
+									<h3 className="">{org.name}</h3>
 									<h4 className="text-sm">Users: {org.userCount}</h4>
 									<h4 className="text-sm">Created At: {new Date(org.createdAt).toLocaleDateString()}</h4>
 								</li>
@@ -84,11 +86,11 @@ export default function Dashboard() {
 				</div>
 
 				<div className="min-h-[45vh]">
-					<h1 className="text-3xl font-medium drop-shadow-sm text-neutral-800 mb-4">Organizations Joined:</h1>
+					<h1 className="text-3xl drop-shadow-sm text-neutral-800 mb-4">Organizations Joined:</h1>
 					{memberOrganizations.length > 0 ? (
 						<ul className="grid grid-cols-4 gap-4">
 							{memberOrganizations.map((member) => (
-								<li key={member.organization.id} className="p-2 border bg-neutral-200 rounded border-neutral-300 shadow">
+								<li key={member.organization.id} className="p-2 border bg-neutral-200 rounded border-neutral-300 shadow hover:cursor-pointer hover:scale-105 transition-all hover:bg-neutral-100 hover:border-neutral-200 hover:shadow-md active:bg-blue-100" onClick={() => router.push(`/organization/${member.organization.id}`)}>
 									<h3>{member.organization.name}</h3>
 									<h4>Created At: {new Date(member.organization.createdAt).toLocaleDateString()}</h4>
 									<h4>Users: {member.organization.userCount || 0}</h4>
@@ -97,7 +99,7 @@ export default function Dashboard() {
 							))}
 						</ul>
 					) : (
-						<p className="text-neutral-500">You’re not a member of any organizations yet.</p>
+						<p className="text-neutral-500 text-center">You’re not a member of any organizations yet.</p>
 					)}
 				</div>
 			</div>

@@ -18,8 +18,8 @@ export default function RootLayout({ children }) {
       <body
         className={`${roboto.class}`}
       >
-        {children}
         <Nav />
+        {children}
       </body>
     </html>
   );
