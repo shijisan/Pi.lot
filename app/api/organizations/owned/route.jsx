@@ -1,32 +1,39 @@
-import { checkAuth } from '@/utils/checkAuth'; // Import checkAuth utility
-import prisma from '@/lib/prisma'; // Your Prisma client
+import { checkAuth } from '@/utils/checkAuth';
+import prisma from '@/lib/prisma';
 import { NextResponse } from 'next/server';
 
-export async function GET(req) {
-  // Call checkAuth to verify if the user is logged in and get their userId
+export async function GET() {
   const userId = await checkAuth();
 
-  // If checkAuth returns an error response, return it early
   if (userId instanceof NextResponse) {
-    return userId; // Return the error response from checkAuth
+    return userId;
   }
 
   try {
-    // Fetch organizations where the current user is the owner
     const ownedOrganizations = await prisma.organization.findMany({
       where: {
-        ownerId: userId, // Filter by ownerId matching the authenticated user's ID
+        ownerId: userId
       },
       include: {
-        users: true, // Include users in each organization (can be modified based on your needs)
-      },
+        users: {
+          include: {
+            user: {
+              select: {
+                fullName: true,
+                email: true
+              }
+            }
+          }
+        }
+      }
     });
 
-    // Return the organizations the user owns
-    console.log(ownedOrganizations);
-    return NextResponse.json({ ownedOrganizations }, { status: 200 });
+    return NextResponse.json({ ownedOrganizations });
   } catch (err) {
     console.error('Error fetching owned organizations:', err);
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Internal Server Error' },
+      { status: 500 }
+    );
   }
 }
