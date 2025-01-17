@@ -75,7 +75,7 @@ export default function Register() {
 					</div>
 				</form>
 			</main>
-			<ToastContainer />
+			<ToastContainer autoClose={1500} />
 		</>
 	);
 }

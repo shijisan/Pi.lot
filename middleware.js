@@ -1,64 +1,47 @@
-import { NextResponse } from "next/server";
-import { jwtVerify } from "jose";
-import { parse } from "cookie";
+import { NextResponse } from 'next/server';
+import { jwtVerify } from 'jose'; // Correct import for JWT verification
+import { cookies } from 'next/headers';
+
+const SECRET_KEY = process.env.JWT_SECRET;
 
 export async function middleware(req) {
-  const { pathname } = req.nextUrl;
-
-  // Check both dashboard and organization routes
-  if (pathname.startsWith("/dashboard") || pathname.startsWith("/organization/")) {
-    const cookies = parse(req.headers.get("cookie") || "");
-    const token = cookies.token;
+  try {
+    console.log("secret key:", SECRET_KEY);
+    // Explicitly await cookies() and get the auth token
+    const cookieStore = await cookies(); // Await cookies retrieval first
+    const token = cookieStore.get('authToken'); // Now get the cookie
 
     if (!token) {
-      return NextResponse.redirect(new URL("/login", req.url));
+      console.error('No valid token found');
+      return NextResponse.redirect(new URL('/login', req.url)); // Token should be a string
     }
 
+    console.log("authtoken found:", token); // Token is fetched correctly, check its structure
+
+    // Try to verify the JWT token using the secret key
     try {
-      // Verify token
-      const { payload } = await jwtVerify(token, new TextEncoder().encode(process.env.JWT_SECRET));
-      
-      // If accessing an organization page, verify authorization
-      if (pathname.startsWith("/organization/")) {
-        const orgId = pathname.split("/")[2];
+      const { payload } = await jwtVerify(token.value, new TextEncoder().encode(SECRET_KEY)); // Ensure token is passed as string (use token.value)
 
-        // Make API calls to check organization access
-        const [ownedRes, memberRes] = await Promise.all([
-          fetch(`${req.nextUrl.origin}/api/organizations/owned`, {
-            headers: { cookie: `token=${token}` }
-          }),
-          fetch(`${req.nextUrl.origin}/api/organizations/member`, {
-            headers: { cookie: `token=${token}` }
-          })
-        ]);
+      console.log('JWT Payload:', payload); // Log the payload for debugging
 
-        if (!ownedRes.ok || !memberRes.ok) {
-          return NextResponse.redirect(new URL("/dashboard", req.url));
-        }
-
-        const [ownedOrgs, memberOrgs] = await Promise.all([
-          ownedRes.json(),
-          memberRes.json()
-        ]);
-
-        // Check if user owns or is member of the organization
-        const isOwner = ownedOrgs.some(org => org.id === orgId);
-        const isMember = memberOrgs.some(member => member.organization.id === orgId);
-
-        if (!isOwner && !isMember) {
-          return NextResponse.redirect(new URL("/dashboard", req.url));
-        }
+      if (!payload) {
+        console.error('Payload is undefined or invalid');
+        return NextResponse.redirect(new URL('/login', req.url)); // Token not valid or payload empty
       }
 
+      // Allow the request to proceed if the token is valid
       return NextResponse.next();
-    } catch (err) {
-      return NextResponse.redirect(new URL("/login", req.url));
+    } catch (verifyError) {
+      console.error('JWT Verification error:', verifyError);
+      return NextResponse.redirect(new URL('/login', req.url)); // JWT verification failed
     }
-  }
 
-  return NextResponse.next();
+  } catch (err) {
+    console.error('Authentication error:', err);
+    return NextResponse.redirect(new URL('/login', req.url)); // On any error, redirect to login
+  }
 }
 
 export const config = {
-  matcher: ['/dashboard', '/organization/:path*']
+  matcher: ['/dashboard', '/organization/:path*', '/chatrooms/:path*'], // Updated to use `:path*` for route patterns
 };

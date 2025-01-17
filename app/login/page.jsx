@@ -19,12 +19,16 @@ export default function Login() {
       body: JSON.stringify(formData),
     });
 
+    const data = await res.json();
+
     if (res.ok) {
+      // Only show success toast if login is successful
       toast.success("Login successful!", {
         onClose: () => router.push("/dashboard"),
       });
     } else {
-      toast.error("Invalid credentials. Please try again.");
+      // If error response, show error toast
+      toast.error(data.error || "Invalid credentials. Please try again.");
     }
   };
 
@@ -47,7 +51,7 @@ export default function Login() {
           <small>Don't have an account yet? <a className="text-blue-600 hover:text-blue-500 underline" href="/register">Sign Up</a></small>
         </div>
       </form>
-      <ToastContainer />
+      <ToastContainer autoClose={1500} />
     </main>
   );
 }

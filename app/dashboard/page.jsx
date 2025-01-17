@@ -11,40 +11,38 @@ export default function Dashboard() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [newOrganizationName, setNewOrganizationName] = useState("");
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const router = useRouter();
 
-  useEffect(() => {
-    const fetchOrganizations = async () => {
-      try {
-        const [ownedRes, memberRes] = await Promise.all([
-          fetch("/api/organizations/owned"),
-          fetch("/api/organizations/member")
-        ]);
+  // This is now a function that can be called from anywhere in the component.
+  const fetchOrganizations = async () => {
+    try {
+      const [ownedRes, memberRes] = await Promise.all([
+        fetch("/api/organizations/owned"),
+        fetch("/api/organizations/member")
+      ]);
 
-        if (!ownedRes.ok || !memberRes.ok) {
-          // If either request returns unauthorized, redirect to login
-          if (ownedRes.status === 401 || memberRes.status === 401) {
-            router.push('/login');
-            return;
-          }
-          throw new Error('Failed to fetch organizations');
-        }
-
-        const [ownedData, memberData] = await Promise.all([
-          ownedRes.json(),
-          memberRes.json()
-        ]);
-
-        setOwnedOrganizations(ownedData);
-        setMemberOrganizations(memberData);
-      } catch (error) {
-        toast.error("Error fetching organizations");
-        console.error("Error fetching organizations:", error);
-      } finally {
-        setLoading(false);
+      if (!ownedRes.ok || !memberRes.ok) {
+        throw new Error('Failed to fetch organizations');
       }
-    };
 
+      const [ownedData, memberData] = await Promise.all([
+        ownedRes.json(),
+        memberRes.json()
+      ]);
+
+      setOwnedOrganizations(ownedData.ownedOrganizations);
+      setMemberOrganizations(memberData.organizations);
+    } catch (error) {
+      setError('Error fetching organizations');
+      console.error("Error fetching organizations:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Fetch organizations on mount
+  useEffect(() => {
     fetchOrganizations();
   }, [router]);
 
@@ -65,20 +63,23 @@ export default function Dashboard() {
 
       if (!response.ok) {
         if (response.status === 401) {
-          router.push('/login');
+          setError("You are not authenticated. Please login.");
           return;
         }
         throw new Error(response.statusText);
       }
 
       const newOrg = await response.json();
-      setOwnedOrganizations((prev) => [...prev, newOrg]);
-      setMemberOrganizations((prev) => [...prev, { organization: newOrg }]);
+
+      // Re-fetch organizations after creation
+      await fetchOrganizations();
+
       setShowCreateModal(false);
       setNewOrganizationName("");
       toast.success("Organization created successfully");
     } catch (error) {
       toast.error("Failed to create organization");
+      setError("Failed to create organization");
       console.error("Error creating organization:", error);
     }
   };
@@ -94,54 +95,77 @@ export default function Dashboard() {
   return (
     <main className="min-h-screen pt-[10vh] flex flex-col justify-center items-center">
       <div className="p-4 max-w-6xl w-full rounded space-y-4">
+        {error && (
+          <div className="bg-red-500 text-white p-4 rounded mb-4">
+            <strong>Error:</strong> {error}
+          </div>
+        )}
+
         <div className="min-h-[45vh] border-b border-neutral-800">
           <h1 className="text-3xl drop-shadow-sm text-neutral-800 mb-4">Organizations Owned:</h1>
           <ul className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {ownedOrganizations.length > 0 ? (
               ownedOrganizations.map((org) => (
-                <li
-                  key={org.id}
-                  className="px-4 py-2 border rounded border-neutral-300 bg-neutral-200 shadow 
-                           hover:cursor-pointer hover:scale-105 transition-all hover:bg-neutral-100 
-                           hover:border-neutral-200 hover:shadow-md active:bg-blue-100"
-                  onClick={() => router.push(`/organization/${org.id}`)}
-                >
-                  <h3 className="font-semibold">{org.name}</h3>
-                  <h4 className="text-sm">Users: {org.userCount}</h4>
-                  <h4 className="text-sm">Created: {new Date(org.createdAt).toLocaleDateString()}</h4>
-                </li>
+                org.name ? (
+                  <li
+                    key={org.id}
+                    className="px-4 py-2 border rounded border-neutral-300 bg-neutral-200 shadow 
+                 hover:cursor-pointer hover:scale-105 transition-all hover:bg-neutral-100 
+                 hover:border-neutral-200 hover:shadow-md active:bg-blue-100"
+                    onClick={() => router.push(`/organization/${org.id}`)}
+                  >
+                    <h3 className="font-semibold">{org.name}</h3>
+                    <h4 className="text-sm">Users: {org.users.length}</h4>
+                    <h4 className="text-sm">Created: {new Date(org.createdAt).toLocaleDateString()}</h4>
+                    <h4 className="text-sm">Owner ID: {org.ownerId}</h4>
+                    <ul>
+                      {org.users.map((user, index) => (
+                        <li key={index} className="text-sm">User: {user.role || "Unnamed"}</li>
+                      ))}
+                    </ul>
+                  </li>
+                ) : null
               ))
             ) : (
               <li className="col-span-full text-neutral-500 text-center">
                 You don't own any organizations yet.
               </li>
             )}
+
           </ul>
         </div>
 
-        <div className="min-h-[45vh]">
+        <div className="min-h-[45vh] border-b border-neutral-800">
           <h1 className="text-3xl drop-shadow-sm text-neutral-800 mb-4">Organizations Joined:</h1>
           {memberOrganizations.length > 0 ? (
             <ul className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
               {memberOrganizations.map((member) => (
-                <li
-                  key={member.organization.id}
-                  className="p-2 border bg-neutral-200 rounded border-neutral-300 shadow 
-                           hover:cursor-pointer hover:scale-105 transition-all hover:bg-neutral-100 
-                           hover:border-neutral-200 hover:shadow-md active:bg-blue-100"
-                  onClick={() => router.push(`/organization/${member.organization.id}`)}
-                >
-                  <h3 className="font-semibold">{member.organization.name}</h3>
-                  <h4 className="text-sm">Created: {new Date(member.organization.createdAt).toLocaleDateString()}</h4>
-                  <h4 className="text-sm">Users: {member.organization.userCount || 0}</h4>
-                  <h4 className="text-sm">Owner: {member.organization.owner.fullName}</h4>
-                </li>
+                member.organization?.name ? (
+                  <li
+                    key={member.organization.id}
+                    className="p-2 border bg-neutral-200 rounded border-neutral-300 shadow 
+                   hover:cursor-pointer hover:scale-105 transition-all hover:bg-neutral-100 
+                   hover:border-neutral-200 hover:shadow-md active:bg-blue-100"
+                    onClick={() => router.push(`/organization/${member.organization.id}`)}
+                  >
+                    <h3 className="font-semibold">{member.organization.name}</h3>
+                    <h4 className="text-sm">Created: {new Date(member.organization.createdAt).toLocaleDateString()}</h4>
+                    <h4 className="text-sm">Users: {member.organization.users.length}</h4>
+                    <h4 className="text-sm">Owner ID: {member.organization.ownerId}</h4>
+                    <ul>
+                      {member.organization.users.map((user, index) => (
+                        <li key={index} className="text-sm">User: {user.role || "Unnamed"}</li>
+                      ))}
+                    </ul>
+                  </li>
+                ) : null
               ))}
             </ul>
           ) : (
             <p className="text-neutral-500 text-center">You're not a member of any organizations yet.</p>
           )}
         </div>
+
       </div>
 
       <button

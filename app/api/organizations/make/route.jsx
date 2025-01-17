@@ -1,59 +1,47 @@
-import { NextResponse } from "next/server";
-import prisma from "@/app/lib/prisma";
-import { cookies } from "next/headers";
-import { jwtVerify } from "jose";
-
-const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET);
+import { checkAuth } from '@/utils/checkAuth'; // Import checkAuth utility
+import prisma from '@/lib/prisma'; // Your Prisma client
+import { NextResponse } from 'next/server';
 
 export async function POST(req) {
-    try {
-        const cookieStore = cookies();
-        const token = cookieStore.get("token")?.value;
+  // Check if the user is authenticated
+  const userId = await checkAuth();
 
-        if (!token) {
-            return NextResponse.json({ error: "Authentication token is missing." }, { status: 401 });
-        }
+  // If checkAuth returns an error, respond with that error
+  if (userId instanceof NextResponse) {
+    return userId; // Unauthorized error response if user is not authenticated
+  }
 
-        let decodedToken;
-        try {
-            const { payload } = await jwtVerify(token, JWT_SECRET);
-            decodedToken = payload;
-        } catch (err) {
-            console.error("JWT verification failed:", err);
-            return NextResponse.json({ error: "Invalid or expired token." }, { status: 401 });
-        }
+  try {
+    // Parse the request body to get the new organization name
+    const { name } = await req.json();
 
-        const userId = decodedToken.sub;
-
-        const body = await req.json();
-        const { name } = body;
-
-        if (!name || name.trim() === "") {
-            return NextResponse.json({ error: "Organization name is required." }, { status: 400 });
-        }
-
-        const newOrganization = await prisma.organization.create({
-            data: {
-                name,
-                ownerId: parseInt(userId, 10),
-                users: {
-                    create: {
-                        userId: parseInt(userId, 10),
-                        role: "CREATOR",
-                    },
-                },
-                userCount: 1,
-            },
-            include: {
-                users: true,
-                owner: true, 
-            },
-        });
-        
-
-        return NextResponse.json(newOrganization, { status: 201 });
-    } catch (error) {
-        console.error("Error creating organization:", error);
-        return NextResponse.json({ error: "An error occurred while creating the organization." }, { status: 500 });
+    // Validate that the name is not empty
+    if (!name || name.trim() === '') {
+      return NextResponse.json({ error: 'Organization name is required.' }, { status: 400 });
     }
+
+    // Create a new organization with the authenticated user as the owner
+    const newOrganization = await prisma.organization.create({
+      data: {
+        name: name.trim(),
+        ownerId: userId, // Set the current user as the owner
+        userCount: 1, // Initial user count is 1 (the owner)
+      },
+    });
+
+    // Add the authenticated user to the new organization as the first member
+    await prisma.organizationUser.create({
+      data: {
+        userId: userId,
+        organizationId: newOrganization.id,
+        role: 'CREATOR', // The owner is the creator of the organization
+      },
+    });
+
+    // Respond with the created organization data
+    return NextResponse.json(newOrganization, { status: 201 });
+  } catch (err) {
+    console.error('Error creating organization:', err);
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+  }
 }

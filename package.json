@@ -11,10 +11,12 @@
   },
   "dependencies": {
     "@prisma/client": "^6.2.1",
+    "@supabase/supabase-js": "^2.47.14",
     "bcryptjs": "^2.4.3",
     "cookie": "^1.0.2",
     "jose": "^5.9.6",
     "next": "15.1.4",
+    "pg": "^8.13.1",
     "prisma": "^6.2.1",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
