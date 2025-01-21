@@ -1,6 +1,6 @@
 "use client";
 
-import { HiOutlineInformationCircle } from "react-icons/hi";
+import { HiOutlineInformationCircle, HiChevronLeft } from "react-icons/hi";
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { toast, ToastContainer } from "react-toastify";
@@ -100,24 +100,22 @@ export default function Organization() {
 
   return (
     <>
-      <ToastContainer
-        position="top-right"
-        autoClose={3000}
-        hideProgressBar={false}
-        newestOnTop
-        closeOnClick
-        rtl={false}
-        pauseOnFocusLoss
-        draggable
-        pauseOnHover
-      />
+
       <main className="min-h-screen w-full flex justify-center items-center pt-[10vh] p-4 flex-row">
-        <div className="max-w-6xl w-full flex h-full flex-row justify-center items-center gap-4">
+        <div className="max-w-6xl w-full flex h-full flex-row justify-center gap-4">
+          {/* operations tab */}
+          <div className="w-1/5 bg-white rounded-md shadow">
+          {/* by default it should be on chatrooms, this area should have manage organizations */}
+          </div>
           {/* Organization Details */}
-          <div className="w-4/5 h-full rounded-md border min-h-52 border-neutral-300 shadow bg-white p-4 flex flex-col">
+          <div className="w-3/5 h-full rounded-md border min-h-52 border-neutral-300 shadow bg-white p-4 flex flex-col">
             <div>
               <div className="inline-flex w-full items-center justify-between relative">
                 <div className="flex flex-row items-center">
+                  <button className="secondary-btn inline-flex justify-center items-center px-4 me-4" onClick={() => router.back()}>
+                    <HiChevronLeft className="me-1" />
+                    Back
+                  </button>
                   <h1 className="text-3xl me-1">{organization.name}</h1>
                   <div className="group w-6 h-6">
                     <HiOutlineInformationCircle className="w-full h-full" />
@@ -134,14 +132,13 @@ export default function Organization() {
                   >
                     Invite Users
                   </button>
-                  <button className="secondary-btn">Manage Organization</button>
                 </div>
               </div>
 
               {/* Chatroom Section */}
               <div className="flex mt-4 gap-4">
                 {/* Chat Container Integration */}
-                <div className="w-full h-full min-h-96 p-4 rounded-md border bg-white shadow">
+                <div className="w-full h-full min-h-96 p-4 rounded-md border bg-neutral-100 shadow">
                   <ChatContainer />
                 </div>
               </div>
@@ -149,7 +146,7 @@ export default function Organization() {
           </div>
 
           {/* Organization Users List */}
-          <div className="w-1/5 shadow border min-h-96 border-neutral-300 rounded-md bg-white h-full flex flex-col">
+          <div className="w-1/5 min-h-96 shadow border border-neutral-300 rounded-md bg-white">
             <h2 className="px-4 pt-4 text-xl">Members</h2>
             <ol className="list-decimal list-inside">
               {Array.isArray(members) && members.length > 0 ? (
@@ -206,6 +203,8 @@ export default function Organization() {
           </div>
         </div>
       )}
+
+      <ToastContainer autoClose={1500} />
     </>
   );
 }

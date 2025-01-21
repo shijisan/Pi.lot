@@ -1,45 +1,42 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { toast, ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
 import { useParams, useRouter } from "next/navigation";
 
-export default function ChatContainer() {
-  const { id } = useParams(); // Getting organization ID from URL
+export default function ChatContainer({ onNotify }) {
+  const { id } = useParams();
   const router = useRouter();
 
-  const [chatrooms, setChatrooms] = useState([]); // Chatrooms list
-  const [selectedChatroom, setSelectedChatroom] = useState(null); // Selected chatroom ID
+  const [chatrooms, setChatrooms] = useState([]);
+  const [selectedChatroom, setSelectedChatroom] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [newChatroomName, setNewChatroomName] = useState(""); // For creating a chatroom
-  const [editingChatroom, setEditingChatroom] = useState(null); // Chatroom being edited
-  const [editChatroomName, setEditChatroomName] = useState(""); // Edit input field
+  const [newChatroomName, setNewChatroomName] = useState("");
+  const [editingChatroom, setEditingChatroom] = useState(null);
+  const [editChatroomName, setEditChatroomName] = useState("");
 
-  // Fetch chatrooms for a specific organization
   useEffect(() => {
     const fetchChatrooms = async () => {
       try {
         setIsLoading(true);
         const response = await fetch(`/api/organizations/${id}/chatrooms/get`, {
-          credentials: 'include' // Important for sending cookies
+          credentials: 'include'
         });
 
         if (!response.ok) {
           const data = await response.json();
           if (response.status === 401) {
-            toast.error("Session expired. Please login again");
+            onNotify("error", "Session expired. Please login again");
             router.push("/dashboard");
             return;
           }
-          toast.error(data.error || "Failed to fetch chatrooms");
+          onNotify("error", data.error || "Failed to fetch chatrooms");
         } else {
           const data = await response.json();
           setChatrooms(data.chatrooms || []);
         }
       } catch (error) {
         console.error("Error fetching chatrooms:", error);
-        toast.error("Failed to fetch chatrooms");
+        onNotify("error", "Failed to fetch chatrooms");
       } finally {
         setIsLoading(false);
       }
@@ -48,11 +45,12 @@ export default function ChatContainer() {
     if (id) {
       fetchChatrooms();
     }
-  }, [id, router]);
+  }, [id, router, onNotify]);
 
-  // Create a new chatroom
   const createChatroom = async () => {
-    if (!newChatroomName.trim()) return toast.error("Chatroom name is required");
+    if (!newChatroomName.trim()) {
+      return onNotify("error", "Chatroom name is required");
+    }
 
     try {
       const response = await fetch(`/api/organizations/${id}/chatrooms/post`, {
@@ -63,22 +61,21 @@ export default function ChatContainer() {
 
       const data = await response.json();
       if (!response.ok) {
-        toast.error(data.error || "Failed to create chatroom");
+        onNotify("error", data.error || "Failed to create chatroom");
       } else {
         setChatrooms((prev) => [...prev, data.chatroom]);
         setNewChatroomName("");
-        toast.success("Chatroom created successfully!");
+        onNotify("success", "Chatroom created successfully!");
       }
     } catch (error) {
       console.error("Error creating chatroom:", error);
-      toast.error("Failed to create chatroom");
+      onNotify("error", "Failed to create chatroom");
     }
   };
 
-  // Edit an existing chatroom
   const updateChatroom = async () => {
     if (!editingChatroom || !editChatroomName.trim()) {
-      return toast.error("Chatroom name is required");
+      return onNotify("error", "Chatroom name is required");
     }
 
     try {
@@ -90,7 +87,7 @@ export default function ChatContainer() {
 
       const data = await response.json();
       if (!response.ok) {
-        toast.error(data.error || "Failed to update chatroom");
+        onNotify("error", data.error || "Failed to update chatroom");
       } else {
         setChatrooms((prev) =>
           prev.map((room) =>
@@ -99,51 +96,36 @@ export default function ChatContainer() {
         );
         setEditingChatroom(null);
         setEditChatroomName("");
-        toast.success("Chatroom updated successfully!");
+        onNotify("success", "Chatroom updated successfully!");
       }
     } catch (error) {
       console.error("Error updating chatroom:", error);
-      toast.error("Failed to update chatroom");
+      onNotify("error", "Failed to update chatroom");
     }
   };
 
-  // Delete a chatroom
-  // Delete a chatroom
   const deleteChatroom = async (chatroomId) => {
     try {
-      const response = await fetch(`/api/organizations/${id}/chatrooms/delete/${chatroomId}`, { // Use the correct chatroomId
+      const response = await fetch(`/api/organizations/${id}/chatrooms/delete/${chatroomId}`, {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
       });
 
       const data = await response.json();
       if (!response.ok) {
-        toast.error(data.error || "Failed to delete chatroom");
+        onNotify("error", data.error || "Failed to delete chatroom");
       } else {
-        setChatrooms((prev) => prev.filter((room) => room.id !== chatroomId)); // Filter out the deleted chatroom
-        toast.success("Chatroom deleted successfully!");
+        setChatrooms((prev) => prev.filter((room) => room.id !== chatroomId));
+        onNotify("success", "Chatroom deleted successfully!");
       }
     } catch (error) {
       console.error("Error deleting chatroom:", error);
-      toast.error("Failed to delete chatroom");
+      onNotify("error", "Failed to delete chatroom");
     }
   };
 
-
   return (
-    <div className="chat-container flex flex-col h-full">
-      <ToastContainer
-        position="top-right"
-        autoClose={3000}
-        hideProgressBar={false}
-        newestOnTop
-        closeOnClick
-        rtl={false}
-        pauseOnFocusLoss
-        draggable
-        pauseOnHover
-      />
-
+    <div className="chat-container flex flex-col min-h-96 h-full justify-between">
       <div className="chatrooms flex-1 overflow-y-auto p-4">
         {isLoading ? (
           <p className="text-center text-gray-500">Loading chatrooms...</p>
@@ -151,11 +133,11 @@ export default function ChatContainer() {
           <p className="text-center text-gray-500">No chatrooms available!</p>
         ) : (
           chatrooms
-            .filter((chatroom) => chatroom && chatroom.name) // Ensure chatroom is not null and has a name
+            .filter((chatroom) => chatroom && chatroom.name)
             .map((chatroom) => (
               <div
                 key={chatroom.id}
-                className="chatroom-item mb-4 p-2 rounded-lg bg-white shadow flex justify-between items-center"
+                className="chatroom-item mb-4 p-2 rounded-lg bg-white hover:cursor-pointer shadow flex justify-between items-center hover:scale-[101%] transition-all"
               >
                 <span
                   className="text-blue-600 cursor-pointer"
@@ -165,7 +147,7 @@ export default function ChatContainer() {
                 </span>
                 <div className="actions flex gap-2">
                   <button
-                    className="text-sm text-green-600"
+                    className="text-sm text-green-600 hover:underline"
                     onClick={() => {
                       setEditingChatroom(chatroom);
                       setEditChatroomName(chatroom.name);
@@ -174,7 +156,7 @@ export default function ChatContainer() {
                     Edit
                   </button>
                   <button
-                    className="text-sm text-red-600"
+                    className="text-sm text-red-600 hover:underline"
                     onClick={() => deleteChatroom(chatroom.id)}
                   >
                     Delete
@@ -183,7 +165,6 @@ export default function ChatContainer() {
               </div>
             ))
         )}
-
       </div>
 
       <div className="chatroom-creation mt-4 p-4 border-t border-gray-200">

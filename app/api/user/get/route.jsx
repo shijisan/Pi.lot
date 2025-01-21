@@ -1,5 +1,5 @@
 // app/api/user/get/route.jsx
-import { checkAuth } from '@/lib/auth'; // Assuming this is the location of your checkAuth function
+import { checkAuth } from '@/utils/checkAuth';
 import { NextResponse } from 'next/server';
 
 export const GET = async (request) => {

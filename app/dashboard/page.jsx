@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import Logout from "../components/Logout";
 import { HiPlus } from "react-icons/hi";
 import { useRouter } from "next/navigation";
-import { toast } from "react-toastify";
+import { toast,ToastContainer } from "react-toastify";
 
 export default function Dashboard() {
   const [ownedOrganizations, setOwnedOrganizations] = useState([]);
@@ -117,12 +117,6 @@ export default function Dashboard() {
                     <h3 className="font-semibold">{org.name}</h3>
                     <h4 className="text-sm">Users: {org.users.length}</h4>
                     <h4 className="text-sm">Created: {new Date(org.createdAt).toLocaleDateString()}</h4>
-                    <h4 className="text-sm">Owner ID: {org.ownerId}</h4>
-                    <ul>
-                      {org.users.map((user, index) => (
-                        <li key={index} className="text-sm">User: {user.role || "Unnamed"}</li>
-                      ))}
-                    </ul>
                   </li>
                 ) : null
               ))
@@ -143,8 +137,8 @@ export default function Dashboard() {
                 member.organization?.name ? (
                   <li
                     key={member.organization.id}
-                    className="p-2 border bg-neutral-200 rounded border-neutral-300 shadow 
-                   hover:cursor-pointer hover:scale-105 transition-all hover:bg-neutral-100 
+                    className="p-2 border bg-neutral-100 rounded border-neutral-300 shadow 
+                   hover:cursor-pointer hover:scale-105 transition-all hover:bg-neutral-50 
                    hover:border-neutral-200 hover:shadow-md active:bg-blue-100"
                     onClick={() => router.push(`/organization/${member.organization.id}`)}
                   >
@@ -152,11 +146,7 @@ export default function Dashboard() {
                     <h4 className="text-sm">Created: {new Date(member.organization.createdAt).toLocaleDateString()}</h4>
                     <h4 className="text-sm">Users: {member.organization.users.length}</h4>
                     <h4 className="text-sm">Owner ID: {member.organization.ownerId}</h4>
-                    <ul>
-                      {member.organization.users.map((user, index) => (
-                        <li key={index} className="text-sm">User: {user.role || "Unnamed"}</li>
-                      ))}
-                    </ul>
+
                   </li>
                 ) : null
               ))}
@@ -196,7 +186,7 @@ export default function Dashboard() {
             />
             <div className="flex justify-end gap-2">
               <button
-                className="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400"
+                className="px-4 py-2 bg-neutral-300 rounded hover:bg-gray-400"
                 onClick={() => setShowCreateModal(false)}
               >
                 Cancel
@@ -211,6 +201,8 @@ export default function Dashboard() {
           </div>
         </div>
       )}
+
+      <ToastContainer autoClose={1500} />
     </main>
   );
 }

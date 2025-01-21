@@ -13,7 +13,7 @@ export async function GET(req, { params }) {
     }
 
     // Get the organization ID from the URL parameters - no need to await params
-    const organizationId = params.id;
+    const organizationId = await params.id;
 
     if (!organizationId) {
       return NextResponse.json(
