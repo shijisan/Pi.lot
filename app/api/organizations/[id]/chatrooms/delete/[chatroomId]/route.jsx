@@ -12,7 +12,7 @@ export async function DELETE(request, { params }) {
     }
 
     // Destructure params directly (no need to await)
-    const { id: orgId, chatroomId } = await params;  // Directly destructure params
+    const { id: orgId, chatroomId } = params;  // Directly destructure params
 
     // Log the extracted values for debugging
     console.log("userId", userId);
@@ -79,6 +79,7 @@ export async function DELETE(request, { params }) {
       );
     }
 
+    // Ensure chatroom belongs to the specified organization
     if (chatroom.organization_id !== orgId) {
       return NextResponse.json(
         { error: 'Chatroom does not belong to this organization' },

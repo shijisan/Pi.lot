@@ -14,12 +14,7 @@ export async function PATCH(request, { params }) {
     // Await params before destructuring
     const { id: orgId, chatroomId } = await params; // Await params here
 
-    // Log the extracted values for debugging
-    console.log("userId", userId);
-    console.log("orgId", orgId);
-    console.log("chatroomId", chatroomId);
-
-    // Validate if chatroomId exists
+    // Validate inputs
     if (!chatroomId) {
       return NextResponse.json(
         { error: 'Chatroom ID is required' },
@@ -27,7 +22,6 @@ export async function PATCH(request, { params }) {
       );
     }
 
-    // Validate if orgId exists (as a string UUID)
     if (!orgId) {
       return NextResponse.json(
         { error: 'Invalid Organization ID' },
@@ -39,8 +33,8 @@ export async function PATCH(request, { params }) {
     const user = await prisma.organizationUser.findUnique({
       where: {
         userId_organizationId: {
-          userId: userId, // The user requesting the update
-          organizationId: orgId, // Use orgId as a string (UUID)
+          userId,
+          organizationId: orgId,
         },
       },
     });
@@ -54,8 +48,6 @@ export async function PATCH(request, { params }) {
 
     // Fetch the role from the user record in the organization
     const userRole = user.role;
-
-    console.log("userRole", userRole);
 
     // Check the user's role (CREATOR or MODERATOR)
     if (![ 'CREATOR', 'MODERATOR' ].includes(userRole)) {
@@ -86,8 +78,8 @@ export async function PATCH(request, { params }) {
       );
     }
 
-    // Parse the request body to get the new name
-    const { name } = await request.json();
+    // Parse the request body to get the new name and labels
+    const { name, labels } = await request.json();
 
     if (!name) {
       return NextResponse.json(
@@ -96,10 +88,10 @@ export async function PATCH(request, { params }) {
       );
     }
 
-    // Update the chatroom (using Supabase)
+    // Update the chatroom in Supabase
     const { data: updatedChatroom, error: updateError } = await supabase
       .from('chatrooms')
-      .update({ name })
+      .update({ name, labels })  // Update the name and labels
       .eq('id', chatroomId)
       .single(); // Update and fetch the updated chatroom
 
@@ -110,7 +102,9 @@ export async function PATCH(request, { params }) {
       );
     }
 
+    // Return the updated chatroom response
     return NextResponse.json({ message: 'Chatroom updated successfully', chatroom: updatedChatroom });
+
   } catch (error) {
     console.error('Error updating chatroom:', error);
 

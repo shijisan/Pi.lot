@@ -8,31 +8,38 @@ generator client {
 }
 
 model User {
-  id            String            @id @default(uuid()) @db.Uuid
+  id            String             @id @default(uuid()) @db.Uuid
   fullName      String
-  email         String            @unique
+  email         String             @unique
   password      String
-  createdAt     DateTime          @default(now())
+  createdAt     DateTime           @default(now())
   organizations OrganizationUser[]
-  ownedOrgs     Organization[]    @relation("UserOwnedOrgs") 
+  ownedOrgs     Organization[]     @relation("UserOwnedOrgs")
 }
 
 model Organization {
-  id            String            @id @default(uuid()) @db.Uuid
-  ownerId       String            @db.Uuid
-  owner         User              @relation("UserOwnedOrgs", fields: [ownerId], references: [id]) 
-  name          String
-  users         OrganizationUser[] 
-  userCount     Int               @default(0)
-  createdAt     DateTime          @default(now())
-  chatrooms     Chatroom[]
+  id        String             @id @default(uuid()) @db.Uuid
+  ownerId   String             @db.Uuid
+  owner     User               @relation("UserOwnedOrgs", fields: [ownerId], references: [id])
+  name      String
+  users     OrganizationUser[]
+  userCount Int                @default(0)
+  createdAt DateTime           @default(now())
+  chatrooms Chatroom[]
+  labels    UserLabel[]
+  Contact   Contact[]
 }
 
 model UserLabel {
-  id            String    @id @default(uuid()) @db.Uuid
-  label         String
-  createdAt     DateTime  @default(now())
-  users         OrganizationUser[] 
+  id             String             @id @default(uuid()) @db.Uuid
+  name           String
+  description    String?
+  color          String?
+  createdAt      DateTime           @default(now())
+  organizationId String             @db.Uuid
+  organization   Organization       @relation(fields: [organizationId], references: [id])
+  users          OrganizationUser[] @relation("UserLabelToOrgUser")
+  chatroomAccess ChatroomAccess[]
 }
 
 model OrganizationUser {
@@ -40,10 +47,11 @@ model OrganizationUser {
   userId         String       @db.Uuid
   organizationId String       @db.Uuid
   role           Role
-  labelId        String?      @db.Uuid
-  label          UserLabel?   @relation(fields: [labelId], references: [id])
   user           User         @relation(fields: [userId], references: [id])
   organization   Organization @relation(fields: [organizationId], references: [id])
+
+  userLabelId String?    @db.Uuid
+  userLabel   UserLabel? @relation("UserLabelToOrgUser", fields: [userLabelId], references: [id])
 
   @@unique([userId, organizationId])
 }
@@ -55,21 +63,47 @@ enum Role {
 }
 
 model Chatroom {
-  id             String       @id @default(uuid()) @db.Uuid
+  id             String           @id @default(uuid()) @db.Uuid
   name           String
-  createdAt      DateTime     @default(now())
-  organizationId String       @db.Uuid
-  organization   Organization @relation(fields: [organizationId], references: [id])
+  description    String?
+  organizationId String           @db.Uuid
+  organization   Organization     @relation(fields: [organizationId], references: [id])
+  labelAccess    ChatroomAccess[]
   messages       Message[]
 }
 
+model ChatroomAccess {
+  id         String    @id @default(uuid()) @db.Uuid
+  chatroomId String    @db.Uuid
+  labelId    String    @db.Uuid
+  canRead    Boolean   @default(true)
+  canWrite   Boolean   @default(false) // More restrictive by default
+  chatroom   Chatroom  @relation(fields: [chatroomId], references: [id])
+  userLabel  UserLabel @relation(fields: [labelId], references: [id])
+
+  @@unique([chatroomId, labelId])
+}
+
 model Message {
-  id          String    @id @default(uuid()) @db.Uuid
-  chatroomId  String    @db.Uuid
-  sender      String
-  content     String
-  createdAt   DateTime  @default(now())
-  chatroom    Chatroom  @relation(fields: [chatroomId], references: [id])
+  id         String   @id @default(uuid()) @db.Uuid
+  chatroomId String   @db.Uuid
+  sender     String
+  content    String
+  createdAt  DateTime @default(now())
+  chatroom   Chatroom @relation(fields: [chatroomId], references: [id])
 
   @@index([chatroomId])
+}
+
+model Contact {
+  id             String       @id @default(uuid()) @db.Uuid
+  fullName       String
+  email          String?      @unique
+  phone          String?
+  position       String?
+  company        String?
+  notes          String?
+  createdAt      DateTime     @default(now())
+  organizationId String       @db.Uuid
+  organization   Organization @relation(fields: [organizationId], references: [id])
 }

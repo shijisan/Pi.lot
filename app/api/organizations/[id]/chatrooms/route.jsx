@@ -1,8 +1,3 @@
-import { checkAuth } from "@/utils/checkAuth";
-import prisma from "@/lib/prisma";
-import { NextResponse } from "next/server";
-
-// New route for /api/organizations/members
 export async function GET() {
    const userId = await checkAuth();
  
@@ -11,13 +6,18 @@ export async function GET() {
    }
  
    try {
-     // Fetch organizations where user is a member
-     const allMemberOrganizations = await prisma.organizationUser.findMany({
+     // Fetch organizations where user is a member but not the owner
+     const memberOrganizations = await prisma.organizationUser.findMany({
        where: {
-         userId: userId
+         userId: userId,
+         organization: {
+           ownerId: {
+             not: userId // Exclude organizations where user is owner
+           }
+         }
        },
        include: {
-         organization: {
+         organization: { // Ensure this relationship is included
            include: {
              users: {
                select: {
@@ -35,9 +35,9 @@ export async function GET() {
        }
      });
  
-     return NextResponse.json({ organizations: allMemberOrganizations });
+     return NextResponse.json({ organizations: memberOrganizations });
    } catch (err) {
-     console.error('Error fetching all member organizations:', err);
+     console.error('Error fetching member organizations:', err);
      return NextResponse.json(
        { error: 'Internal Server Error' },
        { status: 500 }

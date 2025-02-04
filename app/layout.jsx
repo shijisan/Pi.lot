@@ -8,7 +8,7 @@ const roboto = Roboto_Flex({
 })
 
 export const metadata = {
-  title: "Pylot",
+  title: "PI.LOT",
   description: "Made by Christian James Santos",
 };
 
@@ -16,7 +16,7 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <body
-        className={`${roboto.class}`}
+        className={`${roboto.className}`}
       >
         <Nav />
         {children}

@@ -1,66 +1,81 @@
 import { NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase"; // Supabase client
-import { checkAuth } from "@/utils/checkAuth"; // Auth utility
-import prisma from "@/lib/prisma"; // Prisma client
+import { supabase } from "@/lib/supabase";
+import { checkAuth } from "@/utils/checkAuth";
+import prisma from "@/lib/prisma";
 
-export async function POST(req, { params }) {
+export async function POST(req, context) {
   try {
-    // Step 1: Authenticate the user and get the userId
+    // Step 1: Authenticate the user
     const userId = await checkAuth();
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Step 2: Get the organization ID from params
-    const { id: organizationId } = params;
-
-    // Step 3: Parse the request body to get the chatroom name
-    const { name } = await req.json();
-
-    // Step 4: Validate inputs
-    if (!organizationId) {
+    // Step 2: Extract organization ID from params
+    const { id } = await context.params;
+    if (!id) {
       return NextResponse.json({ error: "Invalid organization ID" }, { status: 400 });
     }
 
-    if (!name || name.trim() === "") {
+    // Step 3: Parse the request body
+    const body = await req.json();
+    const { name, description, labelAccess } = body;
+
+    if (!name?.trim()) {
       return NextResponse.json({ error: "Chatroom name is required" }, { status: 400 });
     }
 
-    // Step 5: Verify that the user belongs to the organization using Prisma
-    const isMember = await prisma.organizationUser.findUnique({
+    if (!Array.isArray(labelAccess) || labelAccess.length === 0) {
+      return NextResponse.json({ error: "Label access configuration is required" }, { status: 400 });
+    }
+
+    // Step 4: Verify user's organization membership
+    const orgMember = await prisma.organizationUser.findUnique({
       where: {
         userId_organizationId: {
           userId,
-          organizationId,
+          organizationId: id,
         },
       },
     });
 
-    if (!isMember) {
-      return NextResponse.json({ error: "You are not authorized to create chatrooms in this organization" }, { status: 403 });
+    if (!orgMember) {
+      return NextResponse.json(
+        { error: "Not authorized to create chatrooms in this organization" },
+        { status: 403 }
+      );
     }
 
-    // Step 6: Create the chatroom in Supabase
-    const { data: newChatroom, error } = await supabase
-      .from("chatrooms")
-      .insert([
-        {
+    // Step 5: Create chatroom using Prisma transaction
+    const result = await prisma.$transaction(async (tx) => {
+      // Create the chatroom first
+      const chatroom = await tx.chatroom.create({
+        data: {
           name,
-          organization_id: organizationId,
+          description,
+          organizationId: id,
         },
-      ])
-      .single();
+      });
 
-    if (error) {
-      console.error("Error creating chatroom:", error);
-      return NextResponse.json({ error: "Error creating chatroom in Supabase" }, { status: 500 });
-    }
+      // Create chatroom access entries
+      await tx.chatroomAccess.createMany({
+        data: labelAccess.map(({ labelId, canRead, canWrite }) => ({
+          chatroomId: chatroom.id,
+          labelId,
+          canRead: Boolean(canRead),
+          canWrite: Boolean(canWrite),
+        })),
+      });
 
-    // Step 7: Return the created chatroom
-    return NextResponse.json({ chatroom: newChatroom }, { status: 201 });
+      return chatroom;
+    });
 
+    return NextResponse.json({ chatroom: result }, { status: 201 });
   } catch (error) {
     console.error("Error creating chatroom:", error);
-    return NextResponse.json({ error: "Error creating chatroom" }, { status: 500 });
+    return NextResponse.json(
+      { error: error.message || "Failed to create chatroom" },
+      { status: 500 }
+    );
   }
 }

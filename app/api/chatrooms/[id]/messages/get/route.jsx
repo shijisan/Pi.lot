@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase"; // Supabase for fetching chatroom and messages
-import prisma from "@/lib/prisma"; // Prisma for user full name
+import { supabase } from "@/lib/supabase"; // Supabase for fetching chatroom
 import { checkAuth } from "@/utils/checkAuth"; // Authentication utility
 
 export async function GET(req, { params }) {
@@ -27,42 +26,12 @@ export async function GET(req, { params }) {
       );
     }
 
-    // Step 3: Fetch messages from Supabase and include sender's full name
-    const { data: messages, error: messagesError } = await supabase
-      .from("messages")
-      .select("id, sender, content, created_at")
-      .eq("chatroom_id", chatroomId) // Supabase query to get messages for the specific chatroom
-      .order("created_at", { ascending: true });
-
-    if (messagesError) {
-      console.error("Supabase error:", messagesError);
-      return NextResponse.json(
-        { error: "Failed to fetch messages from the chatroom." },
-        { status: 500 }
-      );
-    }
-
-    // Step 4: Fetch the full name of the sender from Prisma
-    const messagesWithSenderFullName = await Promise.all(
-      messages.map(async (message) => {
-        const user = await prisma.user.findUnique({
-          where: { id: message.sender },
-          select: { fullName: true },
-        });
-
-        return {
-          ...message,
-          senderFullName: user ? user.fullName : "Unknown User",
-        };
-      })
-    );
-
-    // Step 5: Return the messages with the sender's full name
-    return NextResponse.json({ messages: messagesWithSenderFullName });
+    // Step 3: Return the chatroom details
+    return NextResponse.json({ chatroom });
   } catch (err) {
-    console.error("Error fetching chatroom messages:", err);
+    console.error("Error fetching chatroom:", err);
     return NextResponse.json(
-      { error: "An error occurred while fetching messages." },
+      { error: "An error occurred while fetching the chatroom." },
       { status: 500 }
     );
   }

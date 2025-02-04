@@ -101,7 +101,7 @@ export default function Dashboard() {
           </div>
         )}
 
-        <div className="min-h-[45vh] border-b border-neutral-800">
+        <div className="min-h-[45vh]">
           <h1 className="text-3xl drop-shadow-sm text-neutral-800 mb-4">Organizations Owned:</h1>
           <ul className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {ownedOrganizations.length > 0 ? (
@@ -137,7 +137,7 @@ export default function Dashboard() {
                 member.organization?.name ? (
                   <li
                     key={member.organization.id}
-                    className="p-2 border bg-neutral-100 rounded border-neutral-300 shadow 
+                    className="p-2 border bg-neutral-200 rounded border-neutral-300 shadow 
                    hover:cursor-pointer hover:scale-105 transition-all hover:bg-neutral-50 
                    hover:border-neutral-200 hover:shadow-md active:bg-blue-100"
                     onClick={() => router.push(`/organization/${member.organization.id}`)}

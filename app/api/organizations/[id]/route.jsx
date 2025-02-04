@@ -38,8 +38,24 @@ export async function GET(req, { params }) {
       return NextResponse.json({ message: "Organization not found" }, { status: 404 });
     }
 
-    // Return the organization data in the correct structure
-    return NextResponse.json({ organization }, { status: 200 });
+    // Fetch the members of the organization to include in the response
+    const members = organization.users.map((orgUser) => ({
+      id: orgUser.user.id,
+      fullName: orgUser.user.fullName,
+      role: orgUser.role,
+    }));
+
+    // Return the organization data and members in the correct structure
+    return NextResponse.json(
+      {
+        organization: {
+          ...organization,
+          members,
+        },
+        currentUserRole: organization.users.find((orgUser) => orgUser.userId === userId)?.role || "DEFAULT",
+      },
+      { status: 200 }
+    );
   } catch (error) {
     console.error("Error fetching organization:", error); // Log detailed error
     return NextResponse.json({ message: "Error fetching organization" }, { status: 500 });

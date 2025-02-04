@@ -1,47 +1,57 @@
 import { checkAuth } from '@/utils/checkAuth';
-import { supabase } from '@/lib/supabase'; // Make sure you have the correct Supabase client import
+import { supabase } from '@/lib/supabase'; // Assuming you have supabase client set up
+import prisma from '@/lib/prisma';
 import { NextResponse } from 'next/server';
 
-export async function GET(req, { params }) {
+export async function GET(req, context) {
   const userId = await checkAuth();
 
   if (userId instanceof NextResponse) {
     return userId; // Return error from checkAuth
   }
 
-  const { id } = await params; // Ensure the `id` is used as a string (UUID)
+  console.log("Current User ID:", userId); // Debug: User ID
+
+  const { id } = await context.params;
 
   if (!id) {
     return NextResponse.json({ message: "Invalid organization ID" }, { status: 400 });
   }
 
-  console.log("Fetching chatrooms for organization ID:", id);
-
   try {
-    // Query chatrooms from Supabase for the given organizationId
-    const { data: chatrooms, error } = await supabase
-      .from('chatrooms') // Use the correct table name in Supabase
-      .select('*')
-      .eq('organization_id', id); // Assuming the column is named `organization_id` in Supabase
+    // Fetch the organizationId from Prisma (NeonTech DB)
+    const organization = await prisma.organization.findUnique({
+      where: { id: id },
+      select: { id: true },
+    });
 
-    if (error) {
-      console.error("Error fetching chatrooms from Supabase:", error);
+    if (!organization) {
+      return NextResponse.json({ message: "Organization not found" }, { status: 404 });
+    }
+
+    // Fetch chatrooms from Supabase
+    const { data: chatrooms, error: chatroomError } = await supabase
+      .from('chatrooms')
+      .select('*')
+      .eq('organization_id', organization.id);
+
+    if (chatroomError) {
+      console.error("Error fetching chatrooms from Supabase:", chatroomError);
       return NextResponse.json({ message: "Error fetching chatrooms from Supabase" }, { status: 500 });
     }
 
-    console.log("Chatrooms fetched:", chatrooms);
+    console.log("Fetched Chatrooms:", chatrooms); // Debug: Chatrooms from Supabase
 
-    if (!chatrooms || chatrooms.length === 0) {
-      // Return 200 status with a friendly message for no chatrooms
-      return NextResponse.json(
-        { message: "No chatrooms found. You might need an invite to join one.", chatrooms: [] },
-        { status: 200 }
-      );
-    }
+    // Fetch all labels in the organization using Prisma
+    const labels = await prisma.userLabel.findMany({
+      where: { organizationId: id },
+    });
 
-    return NextResponse.json({ chatrooms }, { status: 200 });
+    console.log("Fetched Labels:", labels); // Debug: Labels from Prisma
+
+    return NextResponse.json({ chatrooms, labels }, { status: 200 });
   } catch (error) {
-    console.error("Error fetching chatrooms:", error);
-    return NextResponse.json({ message: "Error fetching chatrooms" }, { status: 500 });
+    console.error("Error fetching data:", error);
+    return NextResponse.json({ message: "Error fetching data" }, { status: 500 });
   }
 }
