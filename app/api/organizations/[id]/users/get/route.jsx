@@ -16,7 +16,6 @@ export async function GET(request, { params }) {
             email: true,
           }
         },
-        label: true
       }
     });
 

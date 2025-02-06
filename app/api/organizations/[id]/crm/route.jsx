@@ -25,7 +25,7 @@ export async function GET(req, { params }) {
 }
 
 export async function POST(req, { params }) {
-   const { id: organizationId } = params;
+   const { id: organizationId } = await params;
    const body = await req.json();
    
    // Check authentication first

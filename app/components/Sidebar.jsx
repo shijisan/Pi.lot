@@ -17,6 +17,9 @@ export default function Sidebar() {
          <a href={`/organization/${id}/crm`} className="w-full inline-flex justify-center items-center hover:bg-neutral-100 transition-colors p-3">
             CRM
          </a>
+         <a href={`/organization/${id}/tasks`} className="w-full inline-flex justify-center items-center hover:bg-neutral-100 transition-colors p-3">
+            Tasks
+         </a>
       </div>
    );
 }
